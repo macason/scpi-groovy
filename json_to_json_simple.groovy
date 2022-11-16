@@ -11,8 +11,7 @@ import groovy.json.JsonBuilder;
        // println "You can print and see the result in the console!"
         //Body 
         def body = message.getBody(String);
-        //def BPID;
-        //def ERR_CODE;    
+
         //Headers 
         def jsonSlurper = new JsonSlurper();
         def jsonData = jsonSlurper.parseText(body);
@@ -20,22 +19,21 @@ import groovy.json.JsonBuilder;
         //Properties 
         map = message.getProperties();
 
-      //  def mB = new MarkupBuilder()
-
-     //   jsonData.test.each {"here is a test"}
- 
-   // println(jsonData.payload.tracking_url)
-    //println(jsonData.order_event.payload.tracking_url)
-
     def builder = new JsonBuilder()
-    builder {
-        'tracking_number' jsonData.order_event.payload.tracking_number
-        'tracking_url' jsonData.order_event.payload.tracking_url
-        'current_state' jsonData.order_event.payload.current_state
-        'retailer_order_number' jsonData.order_event.payload.retailer_order_number
+     def messageLog = messageLogFactory.getMessageLog(message);
+    try{
+        builder {
+            'tracking_number' jsonData.order_event.payload.tracking_number
+            'tracking_url' jsonData.order_event.payload.tracking_url
+            'current_state' jsonData.order_event.payload.current_state
+            'retailer_order_number' jsonData.order_event.payload.retailer_order_number
+        }
+        message.setBody(builder.toPrettyString())
+    }catch(Exception e) {
+        //if the payload doesnt have the JSON path order_event.payload.?????? - pass through the payload as is ... and log it and continue on as if mapping was not required
+        messageLog.addAttachmentAsString("RequestPayload", body, "text/plain");
     }
- 
-    message.setBody(builder.toPrettyString())
+    
     
     return message;    
     }
@@ -43,7 +41,9 @@ import groovy.json.JsonBuilder;
 
 
 
-
+/********************************
+SAMPLE PAYLOAD FOR ABOVE MAPPING
+********************************
 {
 
         "order_event": {
@@ -135,3 +135,4 @@ import groovy.json.JsonBuilder;
     }
 
 }
+**/
