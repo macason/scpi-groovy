@@ -1,0 +1,80 @@
+/*  */
+//import groovy.xml.XmlSlurper
+import com.sap.gateway.ip.core.customdev.util.Message;
+import java.util.HashMap;
+import groovy.xml.*;
+import org.apache.commons.lang3.StringUtils;
+import java.text.DecimalFormat;
+//import com.sap.it.api.ITApiFactory;
+//import com.sap.it.api.mapping.ValueMappingApi
+import java.text.SimpleDateFormat;
+import groovy.json.JsonBuilder;
+
+def Message processData(Message message) {
+    //Body
+    def body = message.getBody(String);
+    def xmlRequest = new XmlSlurper().parseText(body);
+    def xmlWriter = new StringWriter();
+    def xmlMarkup = new MarkupBuilder(xmlWriter);
+
+        try {
+    	def messageLog = messageLogFactory.getMessageLog(message);
+    	//messageLog.addCustomHeaderProperty("Coupa:MemberId", xmlRequest.'card_number'.toString());
+       // messageLog.addCustomHeaderProperty("Coupa:Transaction Number", xmlRequest.'transNum'.toString());
+    }catch(Exception e){} 
+
+    //Get Properties  
+	map = message.getProperties();
+
+    //SimpleDateFormat isoFormat = new SimpleDateFormat("yyyyMMdd");
+    //isoFormat.setTimeZone(TimeZone.getTimeZone("Australia/NSW"));
+    cards = [ xmlRequest.'customerCardIds'.toString()   ]
+    //set dates
+   // def today = isoFormat.format(new Date())
+   // message.setProperty("card_number",xmlRequest.'card_number'.toString());
+    
+    def builder = new JsonBuilder()
+        
+        builder {
+            'idempotencyKey' xmlRequest.'idempotencyKey'.toString()
+            'customerCardIds' cards.collect()
+            'loyaltyProgramId' xmlRequest.'loyaltyProgramId'.toString()
+            'transactionId' xmlRequest.'transactionId'.toString()
+            'reasonCode' xmlRequest.'reasonCode'.toString()
+            'promotionPointAmount' xmlRequest.'promotionPointAmount'.toString() as Integer
+        }
+ 
+    message.setBody(builder.toPrettyString())
+    
+    return message;    
+}
+
+/** OUTPUT
+{
+"idempotencyKey":"A26500000000002024020703000000002220230206091649",
+"customerCardIds":"2705000943903", <--- this must be an array even if it has only one entry
+"loyaltyProgramId":"API_AU",  <--- should be - not _
+"transactionId":"2024020703",
+"reasonCode":"LSPD",
+"promotionPointAmount":"495"
+}
+**/
+/**input
+<root>
+    <idempotencyKey>12123234</idempotencyKey>
+    <customerCardIds>91919191919191</customerCardIds>
+    <loyaltyProgramId>API-AU</loyaltyProgramId>
+    <transactionId>112345566</transactionId>
+    <reasonCode>001</reasonCode>
+    <promotionPointAmount>12</promotionPointAmount>
+</root>
+**/
+
+
+
+
+
+
+
+
+
